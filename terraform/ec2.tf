@@ -18,12 +18,12 @@ locals {
     }
     nexus = {
       name          = "nexus-server"
-      instance_type = "t3.micro"
+      instance_type = "t3.small"
       sg_id         = aws_security_group.nexus_sg.id
     }
     monitoring = {
       name          = "monitoring-server"
-      instance_type = "t3.micro"
+      instance_type = "t3.small"
       sg_id         = aws_security_group.monitoring_sg.id
     }
   }
