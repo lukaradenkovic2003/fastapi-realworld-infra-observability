@@ -1,0 +1,10 @@
+---
+- name: Configure monitoring server
+  hosts: monitoring
+  become: true
+
+  roles:
+    - docker
+    - prometheus
+    - grafana
+    - alertmanager

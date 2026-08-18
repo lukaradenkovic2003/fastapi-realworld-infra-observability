@@ -1,0 +1,7 @@
+---
+- name: Configure FastAPI application server
+  hosts: fastapi
+  become: true
+
+  roles:
+    - docker
