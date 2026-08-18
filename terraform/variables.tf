@@ -16,8 +16,12 @@ variable "public_subnet_cidr" {
   description = "CIDR block for the public subnet"
 }
 
+variable "allowed_ssh_cidr" {
+  type        = string
+  description = "Tvoja IP adresa za SSH i admin dashboard pristup, npr. 1.2.3.4/32"
+}
+
 variable "ssh_key_name" {
   type        = string
-  default     = "my-aws-key" # CHANGE THIS: Exact name of your .pem key on AWS
   description = "Name of the existing AWS SSH key pair for instance access"
 }

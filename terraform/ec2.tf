@@ -8,19 +8,23 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+
 locals {
   instances = {
     fastapi = {
       name          = "fastapi-server"
       instance_type = "t3.micro"
+      sg_id         = aws_security_group.fastapi_sg.id
     }
     nexus = {
       name          = "nexus-server"
-      instance_type = "t3.medium"
+      instance_type = "t3.micro"
+      sg_id         = aws_security_group.nexus_sg.id
     }
     monitoring = {
       name          = "monitoring-server"
-      instance_type = "t3.medium"
+      instance_type = "t3.micro"
+      sg_id         = aws_security_group.monitoring_sg.id
     }
   }
 }
@@ -31,7 +35,7 @@ resource "aws_instance" "web" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = each.value.instance_type
   subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.infra_sg.id]
+  vpc_security_group_ids = [each.value.sg_id]
   key_name               = var.ssh_key_name
 
   root_block_device {
