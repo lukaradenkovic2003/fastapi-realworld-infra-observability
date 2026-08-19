@@ -5,6 +5,4 @@
 
   roles:
     - docker
-    - prometheus
-    - grafana
-    - alertmanager
+    - monitoring
