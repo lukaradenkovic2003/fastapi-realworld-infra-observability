@@ -1,8 +1,0 @@
----
-alertmanager_container_name: alertmanager
-alertmanager_image: prom/alertmanager
-alertmanager_version: latest
-
-alertmanager_port: 9093
-
-alertmanager_config_dir: /opt/alertmanager

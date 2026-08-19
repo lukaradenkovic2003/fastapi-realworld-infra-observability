@@ -1,8 +1,0 @@
----
-grafana_container_name: grafana
-grafana_image: grafana/grafana
-grafana_version: latest
-
-grafana_port: 3000
-
-grafana_data_dir: /opt/grafana

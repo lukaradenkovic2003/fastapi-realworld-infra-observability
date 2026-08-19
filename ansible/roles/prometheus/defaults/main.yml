@@ -1,8 +1,0 @@
----
-prometheus_container_name: prometheus
-prometheus_image: prom/prometheus
-prometheus_version: latest
-
-prometheus_port: 9090
-
-prometheus_config_dir: /opt/prometheus

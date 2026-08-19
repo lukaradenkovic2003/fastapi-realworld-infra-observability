@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - "{{ monitoring_dir }}/prometheus.yml:/etc/prometheus/prometheus.yml"
+    ports:
+      - "{{ prometheus_port }}:9090"
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "{{ grafana_port }}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD={{ grafana_admin_password }}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    restart: always
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - "{{ monitoring_dir }}/alertmanager.yml:/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "{{ alertmanager_port }}:9093"
+    restart: always
+
+volumes:
+  grafana-data:
