@@ -1,0 +1,32 @@
+---
+- name: Create Alertmanager configuration directory
+  ansible.builtin.file:
+    path: "{{ alertmanager_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Alertmanager configuration
+  ansible.builtin.template:
+    src: alertmanager.yml.j2
+    dest: "{{ alertmanager_config_dir }}/alertmanager.yml"
+    mode: "0644"
+  notify: Restart Alertmanager
+
+- name: Pull Alertmanager image
+  community.docker.docker_image:
+    name: "{{ alertmanager_image }}"
+    tag: "{{ alertmanager_version }}"
+    source: pull
+
+- name: Run Alertmanager
+  community.docker.docker_container:
+    name: "{{ alertmanager_container_name }}"
+    image: "{{ alertmanager_image }}:{{ alertmanager_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "{{ alertmanager_port }}:9093"
+    volumes:
+      - "{{ alertmanager_config_dir }}/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"

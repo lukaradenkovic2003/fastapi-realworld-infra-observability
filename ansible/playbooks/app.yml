@@ -1,7 +1,29 @@
----
-- name: Configure FastAPI application server
+- name: Deploy FastAPI application
   hosts: fastapi
   become: true
-
   roles:
     - docker
+
+  tasks:
+    - name: Deploy FastAPI container
+      docker_container:
+        name: fastapi-app
+        image: "{{ docker_image }}"
+        ports:
+          - "8000:8000"
+        restart_policy: always
+
+    - name: Run node_exporter container
+      docker_container:
+        name: node-exporter
+        image: prom/node-exporter:latest
+        restart_policy: always
+        ports:
+          - "9100:9100"
+        volumes:
+          - /proc:/host/proc:ro
+          - /sys:/host/sys:ro
+          - /:/rootfs:ro
+        command:
+          - '--path.procfs=/host/proc'
+          - '--path.sysfs=/host/sys'
