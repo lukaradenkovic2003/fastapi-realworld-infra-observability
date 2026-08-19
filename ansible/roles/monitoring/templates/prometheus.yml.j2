@@ -8,6 +8,7 @@ alerting:
             - "alertmanager:9093"
 
 scrape_configs:
+
   - job_name: "prometheus"
     static_configs:
       - targets:
@@ -17,9 +18,9 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets:
-          - "{{ fastapi_private_ip }}:{{ fastapi_metrics_port }}"
+          - "{{ hostvars[groups['fastapi'][0]]['ansible_host'] }}:{{ fastapi_metrics_port }}"
 
   - job_name: "node-exporter"
     static_configs:
       - targets:
-          - "{{ fastapi_private_ip }}:{{ node_exporter_port }}"
+          - "{{ hostvars[groups['fastapi'][0]]['ansible_host'] }}:{{ node_exporter_port }}"
