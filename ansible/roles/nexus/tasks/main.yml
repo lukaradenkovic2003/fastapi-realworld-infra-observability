@@ -1,0 +1,26 @@
+---
+- name: Create Nexus data directory
+  ansible.builtin.file:
+    path: "{{ nexus_data_dir }}"
+    state: directory
+    owner: "200"
+    group: "200"
+    mode: "0755"
+
+- name: Pull Nexus image
+  community.docker.docker_image:
+    name: "{{ nexus_image }}"
+    tag: "{{ nexus_version }}"
+    source: pull
+
+- name: Run Nexus container
+  community.docker.docker_container:
+    name: "{{ nexus_container_name }}"
+    image: "{{ nexus_image }}:{{ nexus_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "{{ nexus_http_port }}:8081"
+      - "{{ nexus_docker_registry_port }}:8082"
+    volumes:
+      - "{{ nexus_data_dir }}:/nexus-data"
