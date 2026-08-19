@@ -10,6 +10,7 @@
       - ca-certificates
       - curl
       - gnupg
+      - python3-pip
     state: present
 
 - name: Create Docker keyring directory
@@ -44,6 +45,18 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
+
+- name: Install Docker Python SDK
+  ansible.builtin.pip:
+    name: docker
+    state: present
+    break_system_packages: true
+
+- name: Add ansible_user to docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: true
 
 - name: Enable Docker service
   ansible.builtin.systemd:
