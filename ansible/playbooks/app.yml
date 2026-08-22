@@ -1,19 +1,34 @@
 - name: Deploy FastAPI application
   hosts: fastapi
   become: true
+  vars:
+    nexus_registry: "34.232.109.10:8082"
   roles:
     - docker
   tasks:
-    - name: Deploy FastAPI container
-      docker_container:
-        name: fastapi-app
-        image: "{{ docker_image }}"
-        ports:
-          - "8000:8000"
-        restart_policy: always
+    - name: Configure Docker insecure registry for Nexus
+      copy:
+        content: |
+          {
+            "insecure-registries": ["{{ nexus_registry }}"]
+          }
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart docker
+
+    - name: Flush handlers to apply insecure registry config before pulling
+      meta: flush_handlers
+
+    - name: Log in to Nexus Docker registry
+      community.docker.docker_login:
+        registry_url: "{{ nexus_registry }}"
+        username: "{{ nexus_user }}"
+        password: "{{ nexus_password }}"
 
     - name: Run node_exporter container
-      docker_container:
+      community.docker.docker_container:
         name: node-exporter
         image: prom/node-exporter:latest
         restart_policy: always
@@ -26,3 +41,18 @@
         command:
           - '--path.procfs=/host/proc'
           - '--path.sysfs=/host/sys'
+
+    - name: Deploy FastAPI container
+      community.docker.docker_container:
+        name: fastapi-app
+        image: "{{ docker_image | default(nexus_registry + '/fastapi-realworld-example-app:latest') }}"
+        pull: true
+        restart_policy: always
+        ports:
+          - "8000:8000"
+
+  handlers:
+    - name: Restart docker
+      systemd:
+        name: docker
+        state: restarted

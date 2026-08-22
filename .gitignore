@@ -5,3 +5,5 @@ terraform.tfvars
 
 ansible/inventory/hosts.ini
 *.pem
+terraform.tfstate
+terraform.tfstate.backup
