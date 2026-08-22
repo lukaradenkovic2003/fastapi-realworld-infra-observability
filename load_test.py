@@ -2,7 +2,7 @@ import time
 import requests
 
 # Replace with your public AWS EC2 IP address and application port
-BASE_URL = "http://3.230.1.224:8000"
+BASE_URL = "PUBLIC EC2 IP"
 
 def test_api():
     print(f"Starting load test on FastAPI app at {BASE_URL}...")
@@ -39,4 +39,3 @@ if __name__ == "__main__":
         time.sleep(1) # 1-second pause between requests
     
     print("\n[✔] Test completed! Check Grafana to see the metrics spike and the alert trigger.")
-
