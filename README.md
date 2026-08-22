@@ -1,97 +1,278 @@
 # FastAPI RealWorld Infra & Observability
 
-A production-grade, automated DevOps and Observability stack for a FastAPI RealWorld application deployed across a multi-instance AWS EC2 architecture, managed via Terraform and Ansible, and monitored with Prometheus, Grafana, Alertmanager, and Node Exporter.
+A production-grade DevOps and observability stack for a FastAPI RealWorld application deployed across a multi-instance AWS EC2 architecture, provisioned with Terraform, configured with Ansible, and monitored using Prometheus, Grafana, Alertmanager, and Node Exporter.
 
----
+## 🏗️ Architecture
 
-## 🏗️ Architecture & Port Mapping
-
-The infrastructure spans across three dedicated AWS EC2 instances managed via a single orchestration workflow:
+The infrastructure consists of three dedicated AWS EC2 instances:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ EC2 #1 — fastapi-server                                                 │
-│   • FastAPI app (port 8000, /metrics)                                   │
-│   • node_exporter (port 9100, OS metrics)                               │
+│                                                                         │
+│ • FastAPI RealWorld application                                        │
+│ • Application metrics: port 8000                                       │
+│ • Node Exporter: port 9100                                             │
 └─────────────────────────────────────────────────────────────────────────┘
+                              │
+                              │ Metrics
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ EC2 #3 — monitoring-server                                              │
+│                                                                         │
+│ Docker Compose monitoring stack                                        │
+│                                                                         │
+│ • Prometheus: 9090                                                     │
+│ • Grafana: 3000                                                        │
+│ • Alertmanager: 9093                                                   │
+│ • Slack alert notifications                                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
 
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ EC2 #2 — nexus-server                                                   │
-│   • Nexus repository (Docker registry, ports 8081-8083)                 │
+│                                                                         │
+│ • Sonatype Nexus Repository                                             │
+│ • Docker Registry                                                       │
+│ • Ports: 8081–8083                                                      │
 └─────────────────────────────────────────────────────────────────────────┘
+```
 
-┌─────────────────────────────────────────────────────────────────────────┐
-│ EC2 #3 — monitoring-server (jedan docker-compose stack)                 │
-│   • Prometheus (port 9090, scraping metrics)                            │
-│   • Grafana (port 3000, dashboard-i)                                    │
-│   • Alertmanager (port 9093, Slack alertovi)                            │
-└─────────────────────────────────────────────────────────────────────────┘
+### Monitoring Flow
+
+```text
+FastAPI Application
+       │
+       ├── /metrics ───────────────┐
+       │                           │
+Node Exporter                     │
+       │                           │
+       └──────────────┐            │
+                      ▼            ▼
+                 Prometheus
+                      │
+                      ├──────────► Grafana
+                      │
+                      └──────────► Alertmanager
+                                      │
+                                      ▼
+                                   Slack
+```
 
 ## 🛠️ Tech Stack
-Application: FastAPI (RealWorld backend implementation)
 
-Infrastructure (IaaS): AWS EC2, Terraform (terraform/)
-
-Configuration Management: Ansible (ansible/)
-
-Containerization: Docker & Docker Compose (docker-compose.yml.j2)
-
-Observability & Monitoring: Prometheus, Grafana, Node Exporter, Alertmanager
-
-Alerting: Slack Webhooks via dynamic alertmanager.yml.j2 templates
+| Category                 | Technologies              |
+| ------------------------ | ------------------------- |
+| Application              | FastAPI                   |
+| Cloud                    | AWS EC2                   |
+| Infrastructure as Code   | Terraform                 |
+| Configuration Management | Ansible                   |
+| Containerization         | Docker, Docker Compose    |
+| Container Registry       | Sonatype Nexus Repository |
+| Metrics                  | Prometheus                |
+| Visualization            | Grafana                   |
+| System Monitoring        | Node Exporter             |
+| Alerting                 | Alertmanager              |
+| Notifications            | Slack Webhooks            |
+| Automation               | Ansible Playbooks & Roles |
+| Scripting                | Python                    |
 
 ## 📁 Repository Structure
 
-
+```text
+.
 ├── ansible/
 │   ├── inventory/
-│   │   ├── hosts.ini          # Active inventory (git-ignored for secrets)
-│   │   └── hosts.ini.example  # Public template for inventory variables
+│   │   ├── hosts.ini
+│   │   └── hosts.ini.example
+│   │
 │   ├── playbooks/
-│   │   ├── app.yml            # FastAPI & Node Exporter deployment
-│   │   ├── monitoring.yml     # Prometheus, Grafana & Alertmanager setup
-│   │   └── nexus.yml          # Nexus registry configuration
+│   │   ├── app.yml
+│   │   ├── monitoring.yml
+│   │   └── nexus.yml
+│   │
 │   └── roles/
-│       ├── docker/            # Docker engine installation role
-│       ├── monitoring/        # Monitoring stack with Jinja templates
-│       └── nexus/             # Nexus setup role
-├── terraform/                 # AWS infrastructure provisioners (.tf files)
-├── load_test.py               # Python script for traffic simulation
-└── README.md
+│       ├── docker/
+│       ├── monitoring/
+│       └── nexus/
+│
+├── terraform/
+│   └── *.tf
+│
+├── load_test.py
+├── README.md
+└── docker-compose.yml.j2
+```
 
+## 🚀 Deployment
 
-## 🚀 Getting Started & Deployment
-Prerequisites
-WSL (Windows Subsystem for Linux) recommended for running Ansible.
+### Prerequisites
 
-Terraform installed locally.
+* AWS account
+* Terraform
+* Ansible
+* Docker
+* WSL/Linux environment
+* SSH private key configured for AWS EC2 access
 
-SSH Private Key placed in your ~/.ssh/ directory.
+### 1. Provision AWS Infrastructure
 
-1. Configure Inventory
-Copy the example inventory and populate your target AWS EC2 public/private IP addresses and credentials:
+Use Terraform to provision the required AWS infrastructure:
 
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+After provisioning, obtain the public/private IP addresses required for the Ansible inventory.
+
+### 2. Configure Ansible Inventory
+
+Create the local inventory from the provided example:
+
+```bash
 cp ansible/inventory/hosts.ini.example ansible/inventory/hosts.ini
-2. Run Ansible Playbooks
-Execute the playbooks from your WSL terminal using the defined roles path:
+```
 
-Deploy FastAPI Application & Node Exporter:
+Configure the EC2 hosts and SSH connection variables in `hosts.ini`.
 
-ANSIBLE_ROLES_PATH=./roles ansible-playbook -i inventory/hosts.ini playbooks/app.yml
+> `hosts.ini` should not be committed because it may contain environment-specific connection information.
 
-Deploy Nexus Registry:
+### 3. Deploy FastAPI & Node Exporter
 
-ANSIBLE_ROLES_PATH=./roles ansible-playbook -i inventory/hosts.ini playbooks/nexus.yml
+```bash
+cd ansible
 
-Deploy Monitoring Stack (Prometheus, Grafana & Alertmanager):
+ANSIBLE_ROLES_PATH=./roles \
+ansible-playbook -i inventory/hosts.ini playbooks/app.yml
+```
 
-ANSIBLE_ROLES_PATH=./roles ansible-playbook -i inventory/hosts.ini playbooks/monitoring.yml
+This deploys:
 
-## 📊 Monitoring & Alerts
-Prometheus: Active metrics scraping on port 9090.
+* FastAPI application
+* Node Exporter
+* Docker configuration
 
-Grafana Dashboards: Visualizations and system stats available on port 3000.
+### 4. Deploy Nexus Repository
 
-Node Exporter: Exposes hardware/OS metrics (CPU, RAM, Disk, Network) on port 9100.
+```bash
+ANSIBLE_ROLES_PATH=./roles \
+ansible-playbook -i inventory/hosts.ini playbooks/nexus.yml
+```
 
-Slack Integration: Automated threshold alerts routed via Alertmanager (alertmanager.yml.j2) directly to the configured Slack channel.
+This configures the Nexus repository server used as the Docker registry.
+
+### 5. Deploy Monitoring Stack
+
+```bash
+ANSIBLE_ROLES_PATH=./roles \
+ansible-playbook -i inventory/hosts.ini playbooks/monitoring.yml
+```
+
+The monitoring role deploys the Docker Compose stack containing:
+
+* Prometheus
+* Grafana
+* Alertmanager
+
+Configuration files are generated dynamically using Ansible/Jinja2 templates.
+
+## 📊 Observability
+
+### Prometheus
+
+Prometheus collects metrics from the FastAPI application and Node Exporter.
+
+**Default port:** `9090`
+
+### Grafana
+
+Grafana provides dashboards for visualizing application and infrastructure metrics.
+
+**Default port:** `3000`
+
+### Node Exporter
+
+Node Exporter exposes Linux host-level metrics including:
+
+* CPU usage
+* Memory usage
+* Disk usage
+* Network metrics
+* System load
+
+**Default port:** `9100`
+
+### Alertmanager
+
+Alertmanager handles alerts generated by Prometheus and routes them to the configured notification channels.
+
+**Default port:** `9093`
+
+### Slack Alerts
+
+Alertmanager is configured through the Ansible-generated:
+
+```text
+alertmanager.yml.j2
+```
+
+This allows Slack webhook configuration and alert routing to be managed as part of the infrastructure deployment.
+
+## 🧪 Load Testing
+
+The repository includes a Python script for generating application traffic:
+
+```bash
+python3 load_test.py
+```
+
+This can be used to generate traffic and observe application and infrastructure metrics through Prometheus and Grafana.
+
+## 🔐 Infrastructure & Configuration Management
+
+The project separates responsibilities between:
+
+**Terraform**
+
+* AWS infrastructure provisioning
+* EC2 instances
+* Networking and security configuration
+
+**Ansible**
+
+* Server configuration
+* Docker installation
+* Application deployment
+* Nexus deployment
+* Monitoring stack deployment
+* Configuration templating
+
+This separation allows infrastructure provisioning and server configuration to be automated independently.
+
+## 🎯 Project Goals
+
+This project demonstrates practical DevOps and SRE concepts including:
+
+* Infrastructure as Code
+* Configuration Management
+* AWS EC2 infrastructure
+* Containerization
+* Docker Compose
+* Private container registry
+* Automated server provisioning
+* Metrics collection
+* Infrastructure monitoring
+* Application observability
+* Alerting and incident notification
+* Infrastructure automation with Ansible
+* Terraform-based cloud provisioning
+
+## 🔗 Repository
+
+GitHub:
+
+https://github.com/lukaradenkovic2003/fastapi-realworld-infra-observability
+
