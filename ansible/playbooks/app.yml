@@ -27,6 +27,11 @@
         username: "{{ nexus_user }}"
         password: "{{ nexus_password }}"
 
+    - name: Create app network so containers can resolve each other by name
+      community.docker.docker_network:
+        name: fastapi-net
+        state: present
+
     - name: Run node_exporter container
       community.docker.docker_container:
         name: node-exporter
@@ -42,12 +47,31 @@
           - '--path.procfs=/host/proc'
           - '--path.sysfs=/host/sys'
 
+    - name: Run Postgres container
+      community.docker.docker_container:
+        name: db
+        image: postgres:11.5-alpine
+        restart_policy: always
+        networks:
+          - name: fastapi-net
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        volumes:
+          - postgres-data:/var/lib/postgresql/data
+
     - name: Deploy FastAPI container
       community.docker.docker_container:
         name: fastapi-app
         image: "{{ docker_image | default(nexus_registry + '/fastapi-realworld-example-app:latest') }}"
         pull: true
         restart_policy: always
+        networks:
+          - name: fastapi-net
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@db/postgres"
+          SECRET_KEY: "{{ app_secret_key }}"
         ports:
           - "8000:8000"
 
